@@ -3,8 +3,33 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 require('dotenv').config();
 
-const DRUG_COLLECTION = 'Drugs';
-const MOLECULAR_MECHANISMS_COLLECTION = 'Mechanisms';
+/*
+Entity Schematics
+Drug:
+    ...
+    identifier: 
+    Mechanisms: [],
+    DevelopmentStatuses: []
+Mechanism:
+    ...
+    indentifier:
+    DrugIds: []
+DomainSearchable:
+    ...
+    indentifier:
+    relativeId:
+    domain:
+*/
+
+async function asyncForEach(array, callback) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array);
+    }
+  }
+
+const DRUG = 'Drug';
+const MOLECULAR_MECHANISM = 'Mechanism';
+const SEARCH_COLLECTION = 'Search'
 
 const mongo = require('mongodb').MongoClient
 
@@ -40,6 +65,9 @@ mongo.connect(dbConnString, {
             return;
         }
         const db = client.db(process.env.DB_NAME);
+        const drugsCollection = db.collection(DRUG);
+        const mechCollection = db.collection(MOLECULAR_MECHANISM);
+        const searchCollection = db.collection(SEARCH_COLLECTION);
         app.get('/test', (req, res) => {
             console.log("ping from client...");
             res.status(200).send({
@@ -49,7 +77,56 @@ mongo.connect(dbConnString, {
         /*
         add routes here
         */
+       app.post('/uploadDrugs', async (req, res) => {
+            let drugObjs = req.body;
+            // make record for each drug, make mechanism id columns
 
+            /*
+                Inserting Drugs
+            */
+
+            await asyncForEach(drugObjs, async (drug) => {
+                //create all mechanisms and get ids --> upsert
+                let drugAdded = await drugsCollection.insertOne(drug);
+                let drugIdJustAdded = drugAdded.insertedId;
+                // make addition in searchCollection
+                await searchCollection.insertOne({
+                    name: drug.mainName,
+                    relationalId: drugIdJustAdded,
+                    domain: DRUG
+                })
+
+                /*
+                    Inserting/Updating Mechanisms
+                */
+                await asyncForEach(drug.molecularMechanism, async (mech) => {
+                    let foundMech = await mechCollection.findOne(
+                        {name: mech.name}
+                    )
+                    // adding new mechanism
+                    if (!foundMech) {
+                        let mechAdded = await mechCollection.insertOne({
+                            name: mech.name,
+                            drugs: []
+                        });
+                        mechIdJustAdded = mechAdded.insertedId;
+                        // add to Search collection
+                        await searchCollection.insertOne({
+                            name: mech.name,
+                            relationalId: mechIdJustAdded,
+                            domain: MOLECULAR_MECHANISM
+                        })
+                    }
+                    // Whether mechanism exists or not, add new Drug
+                    await mechCollection.updateOne(
+                        {name: mech.name},
+                        { $push: { 'drugs': drug.mainName}},
+                        {upsert: false}
+                    )
+                })
+            })
+            res.status(200).send({message: 'Got the drugs!'})
+       })
 })
 
 app.listen(app.get('port'), () => {
