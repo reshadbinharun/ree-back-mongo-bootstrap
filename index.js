@@ -74,9 +74,11 @@ mongo.connect(dbConnString, {
                 message: 'What\'s up?'
             })
         })
+
         /*
-        add routes here
+        Seeding Database with test data
         */
+       
        app.post('/uploadDrugs', async (req, res) => {
             let drugObjs = req.body;
             // make record for each drug, make mechanism id columns
@@ -127,6 +129,19 @@ mongo.connect(dbConnString, {
             })
             res.status(200).send({message: 'Got the drugs!'})
        })
+
+       /*
+       Search without pagination
+       */
+      app.post('/searchNoPage', async (req, res) => {
+        let searchTerms = req.body.searchTerms;
+        let searchRegex = new RegExp(`^${searchTerms}`)
+        let results = await searchCollection.find(
+            {name: {$regex: searchRegex}}
+            )
+        let resultsToSend = await results.toArray();
+        res.status(200).send({resultsToSend})
+      })
 })
 
 app.listen(app.get('port'), () => {
