@@ -1,0 +1,25 @@
+{
+  "name": "ree-back-mongo-boot",
+  "version": "1.0.0",
+  "description": "This repo will use nodeJS and mongo db for maintaining the backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reshadbinharun/ree-back-mongo-bootstrap.git"
+  },
+  "author": "Reshad Bin Harun",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/reshadbinharun/ree-back-mongo-bootstrap/issues"
+  },
+  "homepage": "https://github.com/reshadbinharun/ree-back-mongo-bootstrap#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1"
+  }
+}
