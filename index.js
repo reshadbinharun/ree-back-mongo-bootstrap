@@ -136,7 +136,7 @@ mongo.connect(dbConnString, {
        */
       app.post('/searchNoPage', async (req, res) => {
         let searchTerms = req.body.searchTerms;
-        let searchRegex = new RegExp(`^${searchTerms}`)
+        let searchRegex = new RegExp(`.*${searchTerms}.*`)
         let results = await searchCollection.find(
             {name: {$regex: searchRegex}}
             )
@@ -163,6 +163,58 @@ mongo.connect(dbConnString, {
         let mechanismInfo = await mechCollection.findOne({_id: _id});
         res.status(200).send({mechanismInfo})
      })
+
+     /*
+     Get Drug by dedicated URL
+     */
+     app.get('/drug/:id', async (req, res) => {
+        let drugInfo = []; 
+        try {
+            let id = ObjectId(req.params.id);
+            let drugInfo = await drugsCollection.findOne({_id: id});
+         } catch(e) {
+            console.log("Incorrect ID format was provided...");
+         }
+         res.status(200).send({drugInfo});
+     })
+
+    /*
+     Get Mechanism by dedicated URL
+     */
+    app.get('/mechanism/:id', async (req, res) => {
+        let mechanismInfo = [];
+        try {
+            let id = ObjectId(req.params.id);
+            mechanismInfo = await mechCollection.findOne({_id: id});
+        } catch (e) {
+            console.log("Incorrect ID format was provided...");
+        }
+        res.status(200).send({mechanismInfo})
+    })
+
+    app.post('/searchWithPage', async (req, res) => {
+        let searchTerms = req.body.searchTerms;
+        let pageNum = parseInt(req.body.pageNum);
+        let resultsPerPage = parseInt(req.body.resultsPerPage);
+        let searchRegex = new RegExp(`.*${searchTerms}.*`)
+        // find number of results
+        let resNum = await searchCollection.find({name: {$regex: searchRegex}}).count();
+        let numPages = Math.ceil(resNum/resultsPerPage);
+        let skip = resultsPerPage * pageNum - 1;
+        console.log("skip is", skip);
+        if (skip > resNum) {
+        }
+        let results = await searchCollection.find(
+            {name: {$regex: searchRegex}}
+            ).skip(skip).limit(resultsPerPage);
+        let resultsToSend = await results.toArray();
+        let responseObj = {
+            numPages: numPages,
+            resNum: resNum,
+            results: resultsToSend
+        }
+        res.status(200).send({responseObj})
+    })
 })
 
 app.listen(app.get('port'), () => {
