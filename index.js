@@ -32,6 +32,7 @@ const MOLECULAR_MECHANISM = 'Mechanism';
 const SEARCH_COLLECTION = 'Search'
 
 const mongo = require('mongodb').MongoClient
+ObjectId = require('mongodb').ObjectID;
 
 const PORT = 8080;
 
@@ -78,7 +79,7 @@ mongo.connect(dbConnString, {
         /*
         Seeding Database with test data
         */
-       
+
        app.post('/uploadDrugs', async (req, res) => {
             let drugObjs = req.body;
             // make record for each drug, make mechanism id columns
@@ -127,7 +128,7 @@ mongo.connect(dbConnString, {
                     )
                 })
             })
-            res.status(200).send({message: 'Got the drugs!'})
+            res.status(200).send({message: 'Got the drugs! When\'s the party'})
        })
 
        /*
@@ -141,7 +142,27 @@ mongo.connect(dbConnString, {
             )
         let resultsToSend = await results.toArray();
         res.status(200).send({resultsToSend})
-      })
+      });
+
+      /*
+      Get Drug information
+      */
+     app.post('/getDrugInfo', async (req, res) => {
+        let id = req.body.id;
+        let _id = ObjectId(id)
+        let drugInfo = await drugsCollection.findOne({_id: _id});
+        res.status(200).send({drugInfo})
+     })
+
+     /*
+      Get Mechanism information
+      */
+     app.post('/getMechanismInfo', async (req, res) => {
+        let id = req.body.id;
+        let _id = ObjectId(id)
+        let mechanismInfo = await mechCollection.findOne({_id: _id});
+        res.status(200).send({mechanismInfo})
+     })
 })
 
 app.listen(app.get('port'), () => {
