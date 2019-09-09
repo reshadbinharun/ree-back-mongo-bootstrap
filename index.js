@@ -128,7 +128,7 @@ mongo.connect(dbConnString, {
                     )
                 })
             })
-            res.status(200).send({message: 'Got the drugs! When\'s the party'})
+            res.status(200).send({message: 'Got the drugs!'})
        })
 
        /*
@@ -197,13 +197,15 @@ mongo.connect(dbConnString, {
         let pageNum = parseInt(req.body.pageNum);
         let resultsPerPage = parseInt(req.body.resultsPerPage);
         let searchRegex = new RegExp(`.*${searchTerms}.*`)
+        console.log("searching with criteria", searchTerms, pageNum, resultsPerPage)
         // find number of results
         let resNum = await searchCollection.find({name: {$regex: searchRegex}}).count();
         let numPages = Math.ceil(resNum/resultsPerPage);
-        let skip = resultsPerPage * pageNum - 1;
-        console.log("skip is", skip);
+        let skip = resultsPerPage * (pageNum - 1);
         if (skip > resNum) {
+            console.log("Skipping too many results!")
         }
+        console.log("skip is", skip);
         let results = await searchCollection.find(
             {name: {$regex: searchRegex}}
             ).skip(skip).limit(resultsPerPage);
@@ -213,6 +215,7 @@ mongo.connect(dbConnString, {
             resNum: resNum,
             results: resultsToSend
         }
+        console.log("sending", responseObj)
         res.status(200).send({responseObj})
     })
 })
